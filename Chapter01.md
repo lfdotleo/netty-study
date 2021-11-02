@@ -18,13 +18,13 @@ Channel 是 Java NIO 的一个基本构造。 它代表一个到实体(如一个
 
 回调在广泛的编程场景中都有应用，而且也是在操作完成后通 知相关方最常见的方式之一。
 
-Netty 在内部使用了回调来处理事件; 当一个回调被触发时，相关的事件可以被一个 interface- ChannelHandler 的实现处理。
+Netty 在内部使用了回调来处理事件; 当一个回调被触发时，相关的事件可以被一个 interface - `ChannelHandler` 的实现处理。
 
 ```java
-public class ConnectHandler extends ChannelInboundHandlerAdapter { 
+public class ConnectHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("Client " + ctx.channel().remoteAddress() + " connected"); 
+        System.out.println("Client " + ctx.channel().remoteAddress() + " connected");
     }
 }
 ```
@@ -35,8 +35,34 @@ public class ConnectHandler extends ChannelInboundHandlerAdapter {
 
 Future 提供了另一种在操作完成时通知应用程序的方式。这个对象可以看作是一个异步操作的结果的占位符; 它将在未来的某个时刻完成，并提供对其结果的访问。
 
-JDK 预置了 interface java.util.concurrent.Future，但是其所提供的实现，只允许手动检查对应的操作是否已经完成，或者一直阻塞直到它完成。这是非常繁琐的，所以 Netty 提供了它自己的实现 —— ChannelFuture，用于在执行异步操作的时候使用。
+JDK 预置了 `interface java.util.concurrent.Future`，但是其所提供的实现，只允许手动检查对应的操作是否已经完成，或者一直阻塞直到它完成。这是非常繁琐的，所以 Netty 提供了它自己的实现 — `ChannelFuture`，用于在执行异步操作的时候使用。
 
-ChannelFuture 提供了几种额外的方法，这些方法使得我们能够注册一个或者多个 ChannelFutureListener 实例。监听器的回调方法 operationComplete()，将会在对应的操作完成时被调用。然后监听器可以判断该操作是成功地完成了还是出错了。如果是后者，我们可以检索产生的 Throwable。简而言之，由 ChannelFutureListener 提供的通知机制消除了手动检查对应的操作是否完成的必要。
+`ChannelFuture` 提供了几种额外的方法，这些方法使得我们能够注册一个或者多个 `ChannelFutureListener` 实例。监听器的回调方法  `operationComplete()`，将会在对应的操作完成时被调用。然后监听器可以判断该操作是成功地完成了还是出错了。如果是后者，我们可以检索产生的 Throwable。简而言之，由 `ChannelFutureListener` 提供的通知机制消除了手动检查对应的操作是否完成的必要。
 
+每个 Netty 的出站 I/O 操作都将返回一个 `ChannelFuture`; 也就是说，它们都不会阻塞。正如我们前面所提到过的一样，Netty 完全是异步和事件驱动的。
+
+```java
+    Channel channel = ...;
+    // Does not block
+    ChannelFuture future = channel.connect(
+        new InetSocketAddress("192.168.0.1", 25));
+    future.addListener(new ChannelFutureListener() {
+        @Override
+        public void operationComplete(ChannelFuture future) {
+            if (future.isSuccess()){
+                ByteBuf buffer = Unpooled.copiedBuffer(
+                    "Hello", Charset.defaultCharset());
+                ChannelFuture wf = future.channel()
+                    .writeAndFlush(buffer);
+            } else {
+                Throwable cause = future.cause();
+                cause.printStackTrace();
+            }
+        });
+    }
+```
+
+上面这段显示了如何利用 `ChannelFutureListener`。首先，要连接到远程节点上。然后，要注册一个新的 `ChannelFutureListener` 到对 `connect()` 方法的调用所返回的 ChannelFuture 上。当该监听器被通知连接已经建立的时候，要检查对应的状态。如果该操作是成功的，那么将数据写到该 Channel。否则，要从 ChannelFuture 中检索对应的 Throwable。
+
+### 事件和 ChannelHandler
 
