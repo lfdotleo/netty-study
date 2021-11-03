@@ -31,7 +31,7 @@ public class EchoServerHandler extends ChannelInboundHandlerAdapter {
     }
 
     /**
-     *  通知 ChannelInboundHandler 最后一次对 channel-Read() 的调用是当前批量读取中的最后一条消息
+     *  通知 ChannelInboundHandler 最后一次对 channelRead() 的调用是当前批量读取中的最后一条消息
      */
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
