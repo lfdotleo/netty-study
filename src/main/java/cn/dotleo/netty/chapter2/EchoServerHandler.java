@@ -9,7 +9,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.CharsetUtil;
 
 /**
- * Echo 服务器
+ * Echo 服务器 ServerHandler
  *
  * 需要响应服务器传入的消息，所以需要实现 ChannelInboundHandler
  * ChannelInboundHandlerAdapter 是 ChannelInboundHandler 的一个默认实现，因为只需要用到少量的方法，所以选择继承该类
